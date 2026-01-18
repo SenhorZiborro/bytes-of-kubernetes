@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: DaemonSet     # O Guardião dos Nodes
+metadata:
+  name: daemonset-completao
+  namespace: default
+  labels:
+    app: agente-monitoramento
+spec:
+  # --- NOTA: Não existe 'replicas' aqui! ---
+  # A quantidade é definida pelo número de nodes elegíveis.
+
+  selector:
+    matchLabels:
+      app: agente-monitoramento
+
+  template:
+    metadata:
+      labels:
+        app: agente-monitoramento
+    spec:
+      # --- DICA DE PRO: Tolerations ---
+      # Isso permite que o DaemonSet rode até no Node Master (Control Plane),
+      # que geralmente bloqueia pods comuns.
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        
+        # Simulando um agente que lê logs do servidor
+        volumeMounts:
+        - name: logs-do-node
+          mountPath: /var/log/host-logs # Onde vai aparecer dentro do container
+          readOnly: true
+
+      volumes:
+      # --- O VOLUME TÍPICO DE DAEMONSET: hostPath ---
+      # "Fura" o container e acessa o disco real do Node.
+      # Perigoso, mas necessário para logs e monitoramento.
+      - name: logs-do-node
+        hostPath:
+          path: /var/log
+          type: Directory

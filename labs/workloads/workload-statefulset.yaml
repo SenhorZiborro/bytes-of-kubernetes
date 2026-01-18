@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-headless
+  labels:
+    app: site-teste
+spec:
+  ports:
+  - port: 80
+    name: web
+  clusterIP: None   # "None" torna ele Headless (Sem IP único de balanceamento)
+  selector:
+    app: site-teste
+---
+# --- PARTE 2: O StatefulSet ---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sts-completao
+  namespace: default
+spec:
+  serviceName: "nginx-headless" # Link com o Service acima
+  replicas: 3
+  selector:
+    matchLabels:
+      app: site-teste
+  template:
+    metadata:
+      labels:
+        app: site-teste
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: web
+        volumeMounts:
+        - name: meu-volume-persistente
+          mountPath: /usr/share/nginx/html
+  
+  # --- O GRANDE DIFERENCIAL: Templates de Volume ---
+  # Isso cria um PVC (Disco) DEDICADO para cada réplica automaticamente.
+  # sts-completao-0 ganha o disco 0, sts-completao-1 ganha o disco 1...
+  volumeClaimTemplates:
+  - metadata:
+      name: meu-volume-persistente
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

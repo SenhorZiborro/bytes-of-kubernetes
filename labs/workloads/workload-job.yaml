@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-completao
+  namespace: default
+  labels:
+    app: calculo-pi
+spec:
+  # --- NOVIDADE 1: Regras de Sucesso ---
+  completions: 5    # Quantas vezes essa tarefa precisa dar certo para o Job ser considerado "Completo"?
+  parallelism: 2    # Quantos pods podem rodar ao mesmo tempo? (Se fosse maior que 1)
+  backoffLimit: 2   # Se der erro, tenta de novo quantas vezes antes de desistir?
+
+  # --- NOVIDADE 2: Limpeza Automática (Opcional, mas útil) ---
+  # Deleta o Job (e os pods) 100 segundos após terminar com sucesso.
+  ttlSecondsAfterFinished: 100 
+
+  template:
+    metadata:
+      labels:
+        app: calculo-pi
+    spec:
+      containers:
+      - name: pi
+        image: perl:5.34.0
+        # O comando que faz algo "pesado" e termina
+        command: ["perl",  "-Mbignum=bpi", "-wle", "print bpi(2000)"]
+        
+        resources:
+          requests:
+            cpu: "0.2"
+          limits:
+            cpu: "0.5"
+
+      # --- NOVIDADE 3: Política de Reinício ---
+      # Em Deployments é sempre "Always". 
+      # Em Jobs, TEM que ser "OnFailure" (só reinicia se der erro) ou "Never".
+      restartPolicy: OnFailure

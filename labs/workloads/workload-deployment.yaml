@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment        # A evolução final: Deployment
+metadata:
+  name: deployment-completao
+  namespace: default
+  labels:
+    app: site-teste
+spec:
+  replicas: 3
+  
+  # --- NOVIDADE: ESTRATÉGIA DE ATUALIZAÇÃO ---
+  # Define como ele troca a versão velha pela nova
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1 # No máximo 1 pod indisponível durante a troca
+      maxSurge: 1       # No máximo 1 pod extra criado acima da meta (4 pods totais)
+
+  selector:
+    matchLabels:
+      app: site-teste
+
+  template:
+    metadata:
+      labels:
+        app: site-teste
+    spec:
+      volumes:
+      - name: meu-volume-temporario
+        emptyDir: {}
+      containers:
+      - name: nginx
+        image: nginx:alpine # Vamos mudar isso no teste de update
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        volumeMounts:
+        - name: meu-volume-temporario
+          mountPath: /usr/share/nginx/html
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
+          limits:
+            cpu: "0.5"
+            memory: "128Mi"

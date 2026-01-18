@@ -1,0 +1,49 @@
+apiVersion: apps/v1     # Mudou de v1 para apps/v1
+kind: ReplicaSet        # Mudou de Pod para ReplicaSet
+metadata:
+  name: replicaset-completao
+  namespace: default
+spec:
+  # --- NOVIDADE 1: Quantas cópias? ---
+  replicas: 3
+  
+  # --- NOVIDADE 2: O Seletor (Crítico!) ---
+  # Ele diz: "Eu cuido de qualquer pod que tenha a etiqueta app: site-teste"
+  selector:
+    matchLabels:
+      app: site-teste
+
+  # --- NOVIDADE 3: O Template (A Forma de Bolo) ---
+  # Daqui para baixo é praticamente o seu código original
+  template:
+    metadata:
+      labels:
+        app: site-teste # Tem que bater com o selector acima
+    spec:
+      # 1. DEFINIÇÃO DO VOLUME 
+      volumes:
+      - name: meu-volume-temporario
+        emptyDir: {}
+
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        
+        # 2. PORTA 
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+
+        # 3. MONTAGEM DO VOLUME 
+        volumeMounts:
+        - name: meu-volume-temporario
+          mountPath: /usr/share/nginx/html
+
+        resources:
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
+          limits:
+            cpu: "0.5"
+            memory: "128Mi"

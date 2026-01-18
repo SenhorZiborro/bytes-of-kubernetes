@@ -1,0 +1,13 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: job-falho
+spec:
+  backoffLimit: 2 # Tenta 2 vezes antes de desistir
+  template:
+    spec:
+      containers:
+      - name: erro
+        image: busybox
+        command: ["sh", "-c", "exit 1"] # Simula erro fatal
+      restartPolicy: Never
