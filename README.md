@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="imgs/bytes-of-kubernetes.png" alt="Bytes of Kubernetes">
+</p>
+
 ## Repositorio de Estudos Kubernetes
 
 Este repositorio contem materiais, arquivos de configuracao e roteiros de laboratorios dedicados ao aprendizado de Kubernetes. O conteudo e estruturado para cobrir desde os fundamentos teoricos ate a implementacao de workloads complexos e gerenciamento de infraestrutura.
