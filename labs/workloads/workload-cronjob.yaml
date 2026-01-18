@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cronjob-completao
+  namespace: default
+spec:
+  # --- O RELÓGIO (CRONTAB SYNTAX) ---
+  # Formato: Minuto Hora DiaMes Mes DiaSemana
+  # "*/1 * * * *" significa: A cada 1 minuto, de todas as horas, todos os dias.
+  schedule: "*/1 * * * *" 
+
+  # --- NOVIDADE 1: Política de Concorrência ---
+  # O que fazer se chegou a hora de rodar (ex: 12:00) mas o job das 11:59 ainda não acabou?
+  # Allow: Roda mesmo assim (pode encavalar).
+  # Forbid: Pula a execução atual e espera o anterior terminar (mais seguro).
+  # Replace: Mata o anterior e começa o novo.
+  concurrencyPolicy: Forbid
+
+  # --- NOVIDADE 2: Histórico (Limpeza Automática) ---
+  # Quantos Jobs de sucesso eu guardo para ver os logs?
+  successfulJobsHistoryLimit: 3
+  # Quantos Jobs de falha eu guardo para debug?
+  failedJobsHistoryLimit: 1
+
+  # O Modelo do Job (igual ao que usamos antes)
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: hello
+            image: busybox
+            # Imprime a data, diz olá e dorme 10s (para simular trabalho)
+            command:
+            - /bin/sh
+            - -c
+            - date; echo "Executando tarefa agendada..."; sleep 10
+          restartPolicy: OnFailure
