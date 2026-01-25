@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-hibrido
+  namespace: default
+  labels:
+    app: app-teste
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-teste
+  template:
+    metadata:
+      labels:
+        app: app-teste
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        
+        # --- PARTE 1: INJETANDO VARIÁVEIS DE AMBIENTE ---
+        env:
+          - name: MEU_AMBIENTE_ATUAL
+            valueFrom:
+              configMapKeyRef:
+                name: config-sistema
+                key: NOME_AMBIENTE
+
+          - name: LOG_LEVEL
+            valueFrom:
+              configMapKeyRef:
+                name: config-sistema
+                key: NIVEL_LOG
+
+        # --- PARTE 2: MONTANDO ARQUIVO (VOLUME) ---
+        volumeMounts:
+        - name: vol-config
+          mountPath: /usr/share/nginx/html
+
+        # --- PARTE 3: RECURSOS (ADICIONADO) ---
+        resources:
+          requests:
+            cpu: "100m"     # Garante 0.1 de um núcleo de CPU (mínimo para rodar)
+            memory: "64Mi"  # Garante 64 Megabytes de RAM
+          limits:
+            cpu: "500m"     # No máximo 0.5 núcleo (se passar, sofre throttling/lentidão)
+            memory: "128Mi" # No máximo 128MB (se passar, o pod é morto/OOMKilled)
+          
+      volumes:
+      - name: vol-config
+        configMap:
+          name: config-sistema

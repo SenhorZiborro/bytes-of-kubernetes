@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-hibrido
+  namespace: default
+  labels:
+    app: app-teste
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app-teste
+  template:
+    metadata:
+      labels:
+        app: app-teste
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: servico-loadbalancer
+spec:
+  type: LoadBalancer  # MUDANÇA: O tipo agora é LoadBalancer
+  selector:
+    app: app-teste
+  ports:
+    - port: 80        # Porta que será exposta no IP externo
+      targetPort: 80  # Porta do Container
