@@ -1,0 +1,87 @@
+# --- 1. CONFIGURAÇÃO DO STORAGECLASS (O "Cardápio" Novo) ---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: meu-storage-custom
+provisioner: k8s.io/minikube-hostpath
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+
+---
+# --- 2. OS PEDIDOS (PVCs) ---
+
+# PVC A: Usando o StorageClass "standard" (Padrão do Minikube)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-padrao-minikube
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: standard 
+
+---
+# PVC B: Usando nosso StorageClass "meu-storage-custom"
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-uso-customizado
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
+  storageClassName: meu-storage-custom
+
+---
+# --- 3. APLICAÇÃO (DEPLOYMENT COM DUPLO MOUNT) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-multi-storage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teste-multi
+  template:
+    metadata:
+      labels:
+        app: teste-multi
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+        
+        # AQUI ACONTECE A MÁGICA: Dois mounts diferentes
+        volumeMounts:
+        # 1. Monta o disco padrão nesta pasta
+        - name: vol-padrao
+          mountPath: /data/padrao
+        
+        # 2. Monta o disco customizado nesta outra pasta
+        - name: vol-custom
+          mountPath: /data/custom
+
+      # Definição de quais PVCs alimentam os volumes acima
+      volumes:
+      - name: vol-padrao
+        persistentVolumeClaim:
+          claimName: pvc-padrao-minikube
+          
+      - name: vol-custom
+        persistentVolumeClaim:
+          claimName: pvc-uso-customizado
