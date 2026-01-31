@@ -1,0 +1,71 @@
+# --- 1. O VOLUME FÍSICO (PV) ---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-manual
+  labels:
+    type: local  # A etiqueta que conecta com o PVC
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/mnt/data/manual" # Caminho dentro do NÓ (Minikube)
+
+---
+# --- 2. O PEDIDO (PVC) ---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-uso-manual
+spec:
+  storageClassName: "" # Força o K8s a NÃO usar storage class automática
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  selector:            # "Eu quero um PV que tenha a label type: local"
+    matchLabels:
+      type: local
+
+---
+# --- 3. APLICAÇÃO (DEPLOYMENT) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-manual
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: teste-manual
+  template:
+    metadata:
+      labels:
+        app: teste-manual
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "64Mi"
+          limits:
+            cpu: "500m"
+            memory: "128Mi"
+        
+        # Onde o volume aparece DENTRO do container
+        volumeMounts:
+        - name: vol-manual
+          mountPath: /data/manual 
+
+      # Qual PVC estamos usando
+      volumes:
+      - name: vol-manual
+        persistentVolumeClaim:
+          claimName: pvc-uso-manual
