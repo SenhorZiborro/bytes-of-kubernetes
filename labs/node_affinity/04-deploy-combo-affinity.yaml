@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-combo-affinity
+  namespace: lab
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx-combo-affinity
+  template:
+    metadata:
+      labels:
+        app: nginx-combo-affinity
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:          
+                  - key: disco            
+                    operator: In
+                    values:
+                      - ssd
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: regiao
+                    operator: In
+                    values:
+                      - sul
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"

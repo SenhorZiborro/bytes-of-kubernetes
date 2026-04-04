@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-anti-dev
+  namespace: lab
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: nginx-anti-dev
+  template:
+    metadata:
+      labels:
+        app: nginx-anti-dev
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: ambiente
+                operator: NotIn
+                values:
+                - desenvolvimento
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"

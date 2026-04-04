@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-producao-preferred
+  namespace: lab
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: nginx-producao-preferred
+  template:
+    metadata:
+      labels:
+        app: nginx-producao-preferred
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 80
+            preference:
+              matchExpressions:
+              - key: ambiente
+                operator: In
+                values:
+                - producao
+          - weight: 20
+            preference:
+              matchExpressions:
+              - key: ambiente
+                operator: In
+                values:
+                - staging
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "64Mi"
+          limits:
+            cpu: "100m"
+            memory: "128Mi"
